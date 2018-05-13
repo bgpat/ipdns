@@ -8,13 +8,19 @@
   version = "v1.0.6"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
     "ed25519",
     "ed25519/internal/edwards25519"
   ]
-  revision = "2d027ae1dddd4694d54f7a8b6cbe78dca8720226"
+  revision = "94e3fad7f1b4eed4ec147751ad6b4c4d33f00611"
 
 [[projects]]
   branch = "master"
@@ -38,6 +44,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6fb3bb560fbb180d30a4fb62ae1b56149172bb41276d77e0cc1f3d12951679b8"
+  inputs-digest = "9a6c369fedffea3197757236209d9e516ed6d89835738ecbbfa21e1e02df3dc5"
   solver-name = "gps-cdcl"
   solver-version = 1

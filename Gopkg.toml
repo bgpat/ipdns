@@ -25,13 +25,17 @@
 #   unused-packages = true
 
 
+[prune]
+  go-tests = true
+  unused-packages = true
+
 [[constraint]]
   name = "github.com/miekg/dns"
   version = "1.0.6"
 
-[prune]
-  go-tests = true
-  unused-packages = true
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
 
 [[constraint]]
   branch = "master"
