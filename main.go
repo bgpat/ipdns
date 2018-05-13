@@ -108,8 +108,8 @@ func handleRequest(domain string) dns.HandlerFunc {
 	if domain == "." {
 		domain = ""
 	}
-	mbox := strings.Replace(mbox, "@", ".", -1)
-	if mbox == "" {
+	mbox := dns.Fqdn(strings.Replace(mbox, "@", ".", -1))
+	if mbox == "." {
 		mbox = adminUser + "." + domain
 	}
 	return func(w dns.ResponseWriter, r *dns.Msg) {
