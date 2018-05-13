@@ -154,7 +154,7 @@ func handleRequest(domain string) dns.HandlerFunc {
 					m.Answer = append(m.Answer, &dns.NS{Hdr: hdr, Ns: domain})
 				} else {
 					for _, ns := range nameservers {
-						m.Answer = append(m.Answer, &dns.NS{Hdr: hdr, Ns: ns})
+						m.Answer = append(m.Answer, &dns.NS{Hdr: hdr, Ns: dns.Fqdn(ns)})
 					}
 				}
 			case dns.TypeSOA:
@@ -183,7 +183,7 @@ func handleRequest(domain string) dns.HandlerFunc {
 			m.Rcode = dns.RcodeSuccess
 		}
 		if err := w.WriteMsg(m); err != nil {
-			log.Printf("ERROR[%04x]\t %v\n", r.MsgHdr.Id, err)
+			log.Printf("ERROR[%04x]\t%v\n", r.MsgHdr.Id, err)
 		}
 	}
 }
