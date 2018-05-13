@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/miekg/dns"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
+	version  string
+	revision string
+	builtAt  string
+
 	addr      string
 	port      string
 	protocols = stringList{"tcp", "udp"}
@@ -55,8 +61,13 @@ func init() {
 
 func main() {
 	flag.Parse()
-	if mbox == "" {
-		mbox = adminUser
+
+	// set defaut serial
+	if serial == 0 {
+		serial, err = strconv.parseUint(builtAt, 10, 64)
+		if err != nil {
+			errors.Wrap(err, "failed to parse variable: builtAt")
+		}
 	}
 
 	g := errgroup.Group{}
