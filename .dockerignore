@@ -1,0 +1,6 @@
+*
+!.git
+.git/opjects
+!Gopkg.*
+!*.go
+!Makefile
