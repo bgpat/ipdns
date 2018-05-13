@@ -15,6 +15,8 @@ Usage of bin/ipdns:
     	SOA mbox (default admin@<domain>)
   -minttl uint
     	SOA minttl (default 3600)
+  -ns value
+    	nameserver list
   -port string
     	listen port (default "53")
   -proto value

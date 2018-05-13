@@ -25,6 +25,7 @@ var (
 	protocols    = stringList{"tcp", "udp"}
 	domains      = stringList{"."}
 	ttl          = uint64(60)
+	nameservers  stringList
 	mbox         string
 	serial       uint64
 	refresh      = uint64(3600)
@@ -54,6 +55,7 @@ func init() {
 	flag.Var(&protocols, "proto", "listen protocol list")
 	flag.Var(&domains, "domain", "domain list")
 	flag.Uint64Var(&ttl, "ttl", ttl, "TTL")
+	flag.Var(&nameservers, "ns", "nameserver list")
 	flag.StringVar(&mbox, "mbox", "", "SOA mbox (default "+adminUser+"@<domain>)")
 	flag.Uint64Var(&serial, "serial", serial, "SOA serial")
 	flag.Uint64Var(&refresh, "refresh", refresh, "SOA refresh")
@@ -142,15 +144,19 @@ func handleRequest(domain string) dns.HandlerFunc {
 					A: req,
 				})
 			case dns.TypeNS:
-				m.Answer = append(m.Answer, &dns.NS{
-					Hdr: dns.RR_Header{
-						Name:   q.Name,
-						Rrtype: dns.TypeNS,
-						Class:  dns.ClassINET,
-						Ttl:    uint32(ttl),
-					},
-					Ns: domain,
-				})
+				hdr := dns.RR_Header{
+					Name:   q.Name,
+					Rrtype: dns.TypeNS,
+					Class:  dns.ClassINET,
+					Ttl:    uint32(ttl),
+				}
+				if len(nameservers) == 0 {
+					m.Answer = append(m.Answer, &dns.NS{Hdr: hdr, Ns: domain})
+				} else {
+					for _, ns := range nameservers {
+						m.Answer = append(m.Answer, &dns.NS{Hdr: hdr, Ns: ns})
+					}
+				}
 			case dns.TypeSOA:
 				m.Answer = append(m.Answer, &dns.SOA{
 					Hdr: dns.RR_Header{
