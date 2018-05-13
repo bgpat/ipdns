@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 	"github.com/pkg/errors"
@@ -18,18 +19,19 @@ var (
 	revision string
 	builtAt  string
 
-	addr      string
-	port      string
-	protocols = stringList{"tcp", "udp"}
-	domains   = stringList{"."}
-	ttl       = uint64(60)
-	mbox      string
-	serial    uint64
-	refresh   = uint64(3600)
-	retry     = uint64(900)
-	expire    = uint64(604800)
-	minttl    = uint64(3600)
-	adminUser = "admin"
+	printVersion bool
+	addr         string
+	port         string
+	protocols    = stringList{"tcp", "udp"}
+	domains      = stringList{"."}
+	ttl          = uint64(60)
+	mbox         string
+	serial       uint64
+	refresh      = uint64(3600)
+	retry        = uint64(900)
+	expire       = uint64(604800)
+	minttl       = uint64(3600)
+	adminUser    = "admin"
 )
 
 type stringList []string
@@ -52,19 +54,27 @@ func init() {
 	flag.Var(&protocols, "proto", "listen protocol list")
 	flag.Var(&domains, "domain", "domain list")
 	flag.Uint64Var(&ttl, "ttl", ttl, "TTL")
-	flag.StringVar(&mbox, "mbox", adminUser+"@<domain>", "SOA mbox")
+	flag.StringVar(&mbox, "mbox", "", "SOA mbox (default "+adminUser+"@<domain>)")
 	flag.Uint64Var(&serial, "serial", serial, "SOA serial")
 	flag.Uint64Var(&refresh, "refresh", refresh, "SOA refresh")
 	flag.Uint64Var(&expire, "expire", expire, "SOA expire")
 	flag.Uint64Var(&minttl, "minttl", minttl, "SOA minttl")
+	flag.BoolVar(&printVersion, "v", false, "print version information")
 }
 
 func main() {
 	flag.Parse()
 
+	if printVersion {
+		t, _ := strconv.ParseInt(builtAt, 10, 64)
+		fmt.Printf("ipdns v%s (revision=%s, built_at=%s)\n", version, revision, time.Unix(t, 0).Format(time.RFC3339))
+		return
+	}
+
 	// set defaut serial
 	if serial == 0 {
-		serial, err = strconv.parseUint(builtAt, 10, 64)
+		var err error
+		serial, err = strconv.ParseUint(builtAt, 10, 64)
 		if err != nil {
 			errors.Wrap(err, "failed to parse variable: builtAt")
 		}
@@ -73,13 +83,17 @@ func main() {
 	g := errgroup.Group{}
 	for _, proto := range protocols {
 		for _, domain := range domains {
+			if (domain == "" || domain == ".") && mbox == "" {
+				log.Fatal("required to specify domain if mbox is blank")
+			}
+
 			server := &dns.Server{
 				Addr: addr + ":" + port,
 				Net:  proto,
 			}
-			dns.HandleFunc(domain, handleRequest(domain))
+			dns.HandleFunc(domain, handleRequest(dns.Fqdn(domain)))
 			g.Go(server.ListenAndServe)
-			log.Println("INFO\tlisten domain=%s", server.Net, server.Addr, domain)
+			log.Printf("INFO\tlisten %s/%s\tdomain=%s\n", server.Addr, server.Net, domain)
 		}
 	}
 	fmt.Println("")
@@ -89,6 +103,9 @@ func main() {
 }
 
 func handleRequest(domain string) dns.HandlerFunc {
+	if domain == "." {
+		domain = ""
+	}
 	mbox := strings.Replace(mbox, "@", ".", -1)
 	if mbox == "" {
 		mbox = adminUser + "." + domain
@@ -96,19 +113,23 @@ func handleRequest(domain string) dns.HandlerFunc {
 	return func(w dns.ResponseWriter, r *dns.Msg) {
 		m := new(dns.Msg)
 		m.SetReply(r)
+		m.Authoritative = true
 		for _, q := range r.Question {
 			log.Printf("INFO [%04x]\trequest: remote=%v qtype=%v name=%v\n", r.MsgHdr.Id, w.RemoteAddr(), dns.TypeToString[q.Qtype], q.Name)
 			if q.Qclass != dns.ClassINET {
+				m.Rcode = dns.RcodeNotImplemented
 				log.Printf("ERROR[%04x]\tunsupported qclass: %s\n", r.MsgHdr.Id, dns.ClassToString[q.Qclass])
-				continue
+				break
 			}
 
 			switch q.Qtype {
 			case dns.TypeA:
+				log.Println(strings.TrimSuffix(q.Name, "."+domain))
 				req := net.ParseIP(strings.TrimSuffix(q.Name, "."+domain)).To4()
 				if req == nil || req.IsUnspecified() {
+					m.Rcode = dns.RcodeNameError
 					log.Printf("ERROR[%04x]\tinvalid domain name: %s\n", r.MsgHdr.Id, q.Name)
-					continue
+					break
 				}
 
 				m.Answer = append(m.Answer, &dns.A{
@@ -148,11 +169,15 @@ func handleRequest(domain string) dns.HandlerFunc {
 				})
 			default:
 				log.Printf("ERROR[%04x]\tunsupported qtype: %s\n", r.MsgHdr.Id, dns.TypeToString[q.Qtype])
+				m.Rcode = dns.RcodeNotImplemented
 			}
 
 		}
+		if len(m.Answer) > 0 {
+			m.Rcode = dns.RcodeSuccess
+		}
 		if err := w.WriteMsg(m); err != nil {
-			log.Printf("ERROR[%04x]\t %v", r.MsgHdr.Id, err)
+			log.Printf("ERROR[%04x]\t %v\n", r.MsgHdr.Id, err)
 		}
 	}
 }
