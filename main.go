@@ -126,7 +126,6 @@ func handleRequest(domain string) dns.HandlerFunc {
 
 			switch q.Qtype {
 			case dns.TypeA:
-				log.Println(strings.TrimSuffix(q.Name, "."+domain))
 				req := net.ParseIP(strings.TrimSuffix(q.Name, "."+domain)).To4()
 				if req == nil || req.IsUnspecified() {
 					m.Rcode = dns.RcodeNameError
