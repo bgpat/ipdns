@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ipdns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ipdns
+  namespace: ipdns
+  labels:
+    app: ipdns
+    role: dns
+spec:
+  selector:
+    matchLabels:
+      app: ipdns
+      role: dns
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: ipdns
+        role: dns
+    spec:
+      containers:
+      - name: ipdns
+        image: bgpat/ipdns:latest
+        args:
+        - -domain=ip.401.jp
+        - -ns=35.200.117.12.ip.401.jp,35.200.7.153.ip.401.jp
+        - -mbox=admin@401.jp
+        ports:
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: udp
+  namespace: ipdns
+  labels:
+    app: ipdns
+    role: dns
+    protocol: udp
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 53
+    targetPort: 53
+    name: dns-udp
+    protocol: UDP
+  selector:
+    app: ipdns
+    role: dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcp
+  namespace: ipdns
+  labels:
+    app: ipdns
+    role: dns
+    protocol: tcp
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 53
+    targetPort: 53
+    name: dns-tcp
+    protocol: TCP
+  selector:
+    app: ipdns
+    role: dns
