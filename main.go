@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bgpat/easycomp"
 	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -62,6 +63,8 @@ func init() {
 	flag.Uint64Var(&expire, "expire", expire, "SOA expire")
 	flag.Uint64Var(&minttl, "minttl", minttl, "SOA minttl")
 	flag.BoolVar(&printVersion, "v", false, "print version information")
+
+	easycomp.AddFlag(flag.CommandLine, "completion", "generate auto complete script")
 }
 
 func main() {
