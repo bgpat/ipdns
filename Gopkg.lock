@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/bgpat/easycomp"
+  packages = ["."]
+  revision = "0b7a62c36dce725f173fc93c815cc8ae51f16039"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
   name = "github.com/miekg/dns"
   packages = ["."]
   revision = "eac804ceef194db2da6ee80c728d7658c8c805ff"
@@ -41,9 +53,15 @@
   packages = ["errgroup"]
   revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "3c6ecd8f22c6f40fbeec94c000a069d7d87c7624"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9a6c369fedffea3197757236209d9e516ed6d89835738ecbbfa21e1e02df3dc5"
+  inputs-digest = "070f57b99f13465e5f09780e92c6522abe20528ff1f6cba7b203ad982b1dea51"
   solver-name = "gps-cdcl"
   solver-version = 1
